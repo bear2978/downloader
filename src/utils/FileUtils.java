@@ -1,7 +1,6 @@
 package utils;
 
-import common.Constant;
-
+import java.util.Properties;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -9,15 +8,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Properties;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class FileUtils {
 
-//    static {
-//        // 解决java不支持AES/CBC/PKCS7Padding模式解密
-//        Security.addProvider(new BouncyCastleProvider());
-//    }
+    static {
+        // 解决java不支持AES/CBC/PKCS7Padding模式解密
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     /**
      * 获取本地文件的大小
@@ -57,7 +57,7 @@ public class FileUtils {
             // Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             // 设置编码及解密方式
-            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), method);
+            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
             // 如果m3u8有IV标签,那么IvParameterSpec构造函数就把IV标签后的内容转成字节数组传进去
             AlgorithmParameterSpec paramSpec = new IvParameterSpec(IV.getBytes());
             cipher.init(Cipher.DECRYPT_MODE, keySpec, paramSpec);
@@ -69,12 +69,22 @@ public class FileUtils {
     }
 
     /**
+     * 创建文件夹
+     */
+    public static void crateDir(String dirPath) {
+        File dir = new File(dirPath);
+        if ( !dir.exists()) {
+            dir.mkdirs();
+        }
+    }
+
+    /**
      * 删除文件或者一个目录下所有文件
      * @param dir
      */
     public static void deleteDir(File dir) {
         //（不包括隐藏文件）
-        if (dir.isDirectory()){
+        if (dir.isDirectory()) {
             File[] list = dir.listFiles();
             if(list != null && list.length != 0) {
                 // 如果文件夹为空，删除该文件夹
@@ -96,14 +106,17 @@ public class FileUtils {
      * @param key 键
      */
     public static String getConfig(String cfgPath, String key) {
-        try (
-                FileInputStream reader = new FileInputStream(cfgPath);
-        ) {
-            Properties pro = new Properties();
-            pro.load(reader);
-            return pro.getProperty(key);
-        } catch (Exception e) {
-            e.printStackTrace();
+        File cfgFile = new File(cfgPath);
+        if (cfgFile.exists()) {
+            try (
+                    FileInputStream reader = new FileInputStream(cfgFile);
+            ) {
+                Properties pro = new Properties();
+                pro.load(reader);
+                return pro.getProperty(key);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }
@@ -115,8 +128,9 @@ public class FileUtils {
      * @param value 值
      */
     public static boolean setConfig(String cfgPath, String key, String value) {
+        File cfgFile = new File(cfgPath);
         try (
-                FileOutputStream reader = new FileOutputStream(cfgPath);
+                FileOutputStream reader = new FileOutputStream(cfgFile);
         ) {
             Properties pro = new Properties();
             pro.put(key, value);

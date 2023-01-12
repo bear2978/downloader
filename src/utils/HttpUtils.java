@@ -7,14 +7,28 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * httpÏà¹Ø¹¤¾ßÀà
+ * httpç›¸å…³å·¥å…·ç±»
  */
 public class HttpUtils {
 
+    private final static List<Integer> redirectCodes = new ArrayList<>();
+
+    static {
+        // 300 - 305 code
+        redirectCodes.add(HttpURLConnection.HTTP_MULT_CHOICE);
+        redirectCodes.add(HttpURLConnection.HTTP_MOVED_PERM);
+        redirectCodes.add(HttpURLConnection.HTTP_MOVED_TEMP);
+        redirectCodes.add(HttpURLConnection.HTTP_SEE_OTHER);
+        redirectCodes.add(HttpURLConnection.HTTP_NOT_MODIFIED);
+        redirectCodes.add(HttpURLConnection.HTTP_USE_PROXY);
+    }
+
     /**
-     * »ñÈ¡ÏÂÔØÎÄ¼şµÄÃû×Ö
+     * è·å–ä¸‹è½½æ–‡ä»¶çš„åå­—
      * @param url
      * @return
      */
@@ -25,17 +39,36 @@ public class HttpUtils {
         try {
             httpURLConnection = getHttpURLConnection(url);
             httpURLConnection.setRequestMethod("GET");
+            httpURLConnection.setInstanceFollowRedirects(false);
             httpURLConnection.connect();
-            // ·½·¨Ò», ¸ù¾İContent-DispositionÏìÓ¦Í·»ñÈ¡ÎÄ¼şÃû
+            // è¿æ¥ä¸æ˜¯çœŸå®åœ°å€ï¼Œè¢«é‡å®šå‘åˆ°å¦ä¸€ä¸ªåœ°å€
+            if (redirectCodes.contains(httpURLConnection.getResponseCode())) {
+                String location = httpURLConnection.getHeaderField("Location");
+                LogUtils.info("Location >> {}", location);
+                if (StringUtils.isNotEmpty(location)) {
+                    return getHttpFileName(location);
+                }
+            }
+
+            System.out.println("Headers: \n" + httpURLConnection.getHeaderFields().toString());
+            // æ–¹æ³•ä¸€, æ ¹æ®Content-Dispositionå“åº”å¤´è·å–æ–‡ä»¶å
             String disposeHead = httpURLConnection.getHeaderField("Content-Disposition");
             if (disposeHead != null && disposeHead.indexOf("=") > 0) {
-                fileName = disposeHead.split("=")[1];
-                fileName = new String(fileName.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
-                LogUtils.info("Content-Disposition »ñÈ¡µ½ÎÄ¼şÃû£º {}", fileName);
+                String[] disposeHeads = disposeHead.split(";");
+                for (String dispose : disposeHeads){
+                    String key = dispose.split("=")[0];
+                    if (key.equals("filename") || key.equals("filename*")) {
+                        fileName = dispose.split("=")[1].trim();
+                        fileName = URLDecoder.decode(new String(fileName.getBytes(StandardCharsets.ISO_8859_1),
+                                StandardCharsets.UTF_8), StandardCharsets.UTF_8.toString());
+                        fileName = fileName.replace("UTF-8''", "");
+                    }
+                }
+                LogUtils.info("Content-Disposition è·å–åˆ°æ–‡ä»¶åï¼š {}", fileName);
                 return fileName;
             }
 
-            // ·½·¨¶ş£¬ ¸ù¾İ Url ÀàµÄ getFile() »ñÈ¡
+            // æ–¹æ³•äºŒï¼Œ æ ¹æ® Url ç±»çš„ getFile() è·å–
             String newUrl = httpURLConnection.getURL().getFile();
             if (newUrl != null && newUrl.length() > 0) {
                 newUrl = URLDecoder.decode(newUrl, StandardCharsets.UTF_8.toString());
@@ -45,14 +78,15 @@ public class HttpUtils {
                 }
                 pos = newUrl.lastIndexOf('/');
                 fileName = newUrl.substring(pos + 1);
-                LogUtils.info("URL.getFile() »ñÈ¡µ½ÎÄ¼şÃû£º {}", fileName);
-                return fileName;
+                LogUtils.info("URL.getFile() è·å–åˆ°æ–‡ä»¶åï¼š {}", fileName);
             }
-            // »ñÈ¡MIME-Type
-            MIMEType = HttpURLConnection.guessContentTypeFromStream(httpURLConnection.getInputStream());
-            throw new IOException("»ñÈ¡ÎÄ¼şÃûÊ§°Ü£¡");
+            if (StringUtils.isEmpty(fileName)) {
+                // è·å–MIME-Type
+                MIMEType = HttpURLConnection.guessContentTypeFromStream(httpURLConnection.getInputStream());
+                throw new IOException("è·å–æ–‡ä»¶åå¤±è´¥ï¼");
+            }
         } catch (IOException e) {
-            // ³öÏÖÒì³£, ¸ù¾İµ±Ç°Ê±¼äºÍMIME-Type¹¹½¨ÎÄ¼şÃû
+            // å‡ºç°å¼‚å¸¸, æ ¹æ®å½“å‰æ—¶é—´å’ŒMIME-Typeæ„å»ºæ–‡ä»¶å
             fileName = StringUtils.formatTime(Constant.FILE_NAME_DATE_FORMAT_PATTERN);
             if (MIMEType != null) {
                 fileName += "." + MIMEType.substring(MIMEType.lastIndexOf("/") + 1);
@@ -66,7 +100,7 @@ public class HttpUtils {
     }
 
     /**
-     * »ñÈ¡ÏÂÔØÎÄ¼ş´óĞ¡
+     * è·å–ä¸‹è½½æ–‡ä»¶å¤§å°
      * @param url
      * @return
      * @throws IOException
@@ -86,15 +120,15 @@ public class HttpUtils {
     }
 
     /**
-     * ·Ö¿éÏÂÔØ
-     * @param url      ÏÂÔØµØÖ·
-     * @param startPos ÏÂÔØÎÄ¼şÆğÊ¼Î»ÖÃ
-     * @param endPos   ÏÂÔØÎÄ¼şµÄ½áÊøÎ»ÖÃ
+     * åˆ†å—ä¸‹è½½
+     * @param url      ä¸‹è½½åœ°å€
+     * @param startPos ä¸‹è½½æ–‡ä»¶èµ·å§‹ä½ç½®
+     * @param endPos   ä¸‹è½½æ–‡ä»¶çš„ç»“æŸä½ç½®
      * @return
      */
     public static HttpURLConnection getHttpURLConnection(String url, long startPos, long endPos) throws IOException {
         HttpURLConnection httpURLConnection = getHttpURLConnection(url);
-        LogUtils.info("ÏÂÔØµÄÇø¼äÊÇ£º{}-{}", startPos, endPos);
+        LogUtils.info("ä¸‹è½½çš„åŒºé—´æ˜¯ï¼š{}-{}", startPos, endPos);
 
         if (endPos != 0) {
             httpURLConnection.setRequestProperty("RANGE", "bytes=" + startPos + "-" + endPos);
@@ -105,15 +139,15 @@ public class HttpUtils {
     }
 
     /**
-     * »ñÈ¡HttpURLConnectionÁ´½Ó¶ÔÏó
-     * @param url ÎÄ¼şµÄµØÖ·
+     * è·å–HttpURLConnectioné“¾æ¥å¯¹è±¡
+     * @param url æ–‡ä»¶çš„åœ°å€
      * @return
      */
     public static HttpURLConnection getHttpURLConnection(String url) throws IOException {
         URL httpUrl = new URL(url);
         HttpURLConnection httpURLConnection = (HttpURLConnection) httpUrl.openConnection();
         httpURLConnection.setConnectTimeout(Constant.TIME_OUT);
-        //ÏòÎÄ¼şËùÔÚµÄ·şÎñÆ÷·¢ËÍ±êÊ¶ĞÅÏ¢
+        //å‘æ–‡ä»¶æ‰€åœ¨çš„æœåŠ¡å™¨å‘é€æ ‡è¯†ä¿¡æ¯
         httpURLConnection.setRequestProperty("User-Agent", Constant.USER_AGENT);
         return httpURLConnection;
     }

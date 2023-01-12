@@ -12,146 +12,153 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * ÏÂÔØÆ÷
+ * ä¸‹è½½å™¨
  * @author zyj
  */
-
 public class Downloader {
 
+    // åˆ›å»ºçº¿ç¨‹æ± å¯¹è±¡
+    private final ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(Constant.PART_NUM, Constant.PART_NUM,
+            0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+
     /**
-     * ÎÄ¼şÏÂÔØ
+     * æ–‡ä»¶ä¸‹è½½
      * @param url
      */
     public String downloadFile(String url, String path) {
-        // ÎÄ¼şÃûºÍÏÂÔØ±£´æÂ·¾¶
+        // æ–‡ä»¶åå’Œä¸‹è½½ä¿å­˜è·¯å¾„
         String fileName = HttpUtils.getHttpFileName(url);
         boolean isM3U8File = false;
-        // ´¦ÀíM3U8ÎÄ¼şÃû
+        // å¤„ç†M3U8æ–‡ä»¶å
         if (url.endsWith(Constant.M3U8_SUFFIX_NAME)) {
             isM3U8File = true;
             fileName = fileName.replace(Constant.M3U8_SUFFIX_NAME, Constant.MP4_SUFFIX_NAME);
         }
         File file = new File(path, fileName);
 
-        // »ñÈ¡ÒÑÏÂÔØÎÄ¼ş´óĞ¡
+        // è·å–å·²ä¸‹è½½æ–‡ä»¶å¤§å°
         long localFileLength = FileUtils.getFileContentLength(file.getPath());
         HttpURLConnection httpURLConnection = null;
         DownloadInfoThread downloadInfoThread = null;
-        ThreadPoolExecutor poolExecutor = null;
+
         M3U8 m3u8 = null;
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         try {
-            // »ñÈ¡Á¬½Ó¶ÔÏó
+            // è·å–è¿æ¥å¯¹è±¡
             httpURLConnection = HttpUtils.getHttpURLConnection(url);
-            // »ñÈ¡ÏÂÔØÎÄ¼şµÄ×Ü´óĞ¡
+            // è·å–ä¸‹è½½æ–‡ä»¶çš„æ€»å¤§å°
             int contentLength = httpURLConnection.getContentLength();
-            if (!isM3U8File && localFileLength >= contentLength) {
-                return String.format("ÎÄ¼ş¡¾%s¡¿ÒÑÏÂÔØ£¬ÎŞĞèÖØĞÂÏÂÔØ", fileName);
+            if (contentLength != -1 && !isM3U8File && localFileLength >= contentLength) {
+                return String.format("æ–‡ä»¶ã€%sã€‘å·²ä¸‹è½½ï¼Œæ— éœ€é‡æ–°ä¸‹è½½", fileName);
             }
-            // ¶ÔÒªÏÂÔØµÄÎÄ¼ş½øĞĞ·Ö¸î
+            // å¯¹è¦ä¸‹è½½çš„æ–‡ä»¶è¿›è¡Œåˆ†å‰²
             List<FileSequence> fileSequences = new LinkedList<>();
-            // ·ÖÆ¬ÎÄ¼şÏÈ±£´æµ½ÁÙÊ±ÎÄ¼ş¼Ğ
+            // åˆ†ç‰‡æ–‡ä»¶å…ˆä¿å­˜åˆ°ä¸´æ—¶æ–‡ä»¶å¤¹
             String tmpPath = file.getParent() + Constant.TMP_PATH;
-            // ÅĞ¶ÏÎÄ¼ş¸ñÊ½
+            // ä¸´æ—¶ç¼“å­˜æ–‡ä»¶å¤¹åˆ›å»º
+            FileUtils.crateDir(tmpPath);
+            // åˆ¤æ–­æ–‡ä»¶æ ¼å¼
             if (isM3U8File) {
                 m3u8 = parseM3U8Url(url);
                 List<String> tsList = m3u8.getTsList();
                 int segmentNum = tsList.size();
-                HomeJFrame.appendMessage("½âÎö m3u8 Á´½Ó³É¹¦...");
-                HomeJFrame.appendMessage(String.format("¼ÓÃÜ·½Ê½£º %s", m3u8.getMethod()));
-                HomeJFrame.appendMessage(String.format("¼ÓÃÜÃÜÔ¿£º %s", m3u8.getKey()));
-                HomeJFrame.appendMessage(String.format("IVÆ«ÒÆÁ¿£º %s", m3u8.getIV()));
-                HomeJFrame.appendMessage(String.format("¹² %s ¸ötsÆ¬¶Î", segmentNum));
-                // ·â×° ts ÁĞ±í
+                HomeJFrame.appendMessage("è§£æ m3u8 é“¾æ¥æˆåŠŸ...");
+                HomeJFrame.appendMessage(String.format("åŠ å¯†æ–¹å¼ï¼š %s", m3u8.getMethod()));
+                HomeJFrame.appendMessage(String.format("åŠ å¯†å¯†é’¥ï¼š %s", m3u8.getKey()));
+                HomeJFrame.appendMessage(String.format("IVåç§»é‡ï¼š %s", m3u8.getIV()));
+                HomeJFrame.appendMessage(String.format("å…± %s ä¸ªtsç‰‡æ®µ", segmentNum));
+                // å°è£… ts åˆ—è¡¨
                 for (String tsUrl : tsList) {
                     String tsName = tsUrl.substring(tsUrl.lastIndexOf("/") + 1);
                     String desPath = tmpPath + tsName;
                     FileSequence itemSequence = new FileSequence(tsUrl, desPath);
                     fileSequences.add(itemSequence);
                 }
-            }else if(contentLength < Constant.PART_NUM * Constant.BYTE_SIZE) {
+            }else if(contentLength < Constant.PART_NUM * Constant.MB * 10) {
+                // æ–‡ä»¶å¤§å°å°äº50MB, ç›´æ¥ä¸‹è½½
                 FileSequence itemSequence = new FileSequence(url, file.getPath());
                 fileSequences.add(itemSequence);
             }else {
-                // ÎÄ¼ş·Ö¿é, ¼ÆËãÇĞ·ÖºóµÄÎÄ¼şÃ¿Ò»¿éµÄ´óĞ¡
+                // æ–‡ä»¶åˆ†å—, è®¡ç®—åˆ‡åˆ†åçš„æ–‡ä»¶æ¯ä¸€å—çš„å¤§å°
                 long size = contentLength / Constant.PART_NUM;
-                // ÏÂÔØÃ¿Ò»¿éÎÄ¼ş
+                // ä¸‹è½½æ¯ä¸€å—æ–‡ä»¶
                 for (int i = 0; i < Constant.PART_NUM; i++) {
-                    //¼ÆËãÏÂÔØÆğÊ¼Î»ÖÃ
+                    //è®¡ç®—ä¸‹è½½èµ·å§‹ä½ç½®
                     long startPos = i * size;
                     long endPos = startPos + size;
-                    // Èç¹û²»ÊÇµÚÒ»¿é£¬ÆğÊ¼Î»ÖÃÒª +1
+                    // å¦‚æœä¸æ˜¯ç¬¬ä¸€å—ï¼Œèµ·å§‹ä½ç½®è¦ +1
                     if (startPos != 0) {
                         startPos += 1;
                     }
-                    // ¼ÆËã½áÊøÎ»ÖÃ
+                    // è®¡ç®—ç»“æŸä½ç½®
                     if (i == Constant.PART_NUM - 1) {
-                        //ÏÂÔØ×îºóÒ»¿é£¬ÏÂÔØÊ£ÓàµÄ²¿·Ö
+                        //ä¸‹è½½æœ€åä¸€å—ï¼Œä¸‹è½½å‰©ä½™çš„éƒ¨åˆ†
                         endPos = 0;
                     }
-                    FileSequence itemSequence = new FileSequence(url, tmpPath + fileName + Constant.PART_NAME + i, startPos, endPos);
+                    String desPath = tmpPath + fileName + Constant.PART_NAME + i;
+                    FileSequence itemSequence = new FileSequence(url, desPath, startPos, endPos);
                     fileSequences.add(itemSequence);
                 }
             }
             int partNum = fileSequences.size();
             CountDownLatch countDownLatch = new CountDownLatch(partNum);
-            // ´´½¨Ïß³Ì³Ø¶ÔÏó
-            poolExecutor = new ThreadPoolExecutor(partNum, partNum, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(partNum));
+
             if (! isM3U8File) {
-                // ´´½¨»ñÈ¡ÏÂÔØĞÅÏ¢µÄÈÎÎñ¶ÔÏó
+                // åˆ›å»ºè·å–ä¸‹è½½ä¿¡æ¯çš„ä»»åŠ¡å¯¹è±¡
                 downloadInfoThread = new DownloadInfoThread(contentLength);
-                // ½«ÈÎÎñ½»¸øÏß³ÌÖ´ĞĞ£¬Ã¿¸ô1ÃëÖ´ĞĞÒ»´Î
+                // å°†ä»»åŠ¡äº¤ç»™çº¿ç¨‹æ‰§è¡Œï¼Œæ¯éš”1ç§’æ‰§è¡Œä¸€æ¬¡
                 scheduledExecutorService.scheduleAtFixedRate(downloadInfoThread, 1, 1, TimeUnit.SECONDS);
             }
-            // Ìá½»ÈÎÎñµ½Ïß³Ì³Ø
+            // æäº¤ä»»åŠ¡åˆ°çº¿ç¨‹æ± 
             for (int i = 0; i < partNum; i++) {
                 FileSequence sequence = fileSequences.get(i);
                 if (isM3U8File) {
-                    poolExecutor.submit(new M3U8DownloaderTask(sequence.getUrl(), sequence.getLocalPath(), m3u8, i + 1, countDownLatch));
+                    poolExecutor.submit(new M3U8DownloaderTask(sequence.getUrl(), sequence.getLocalPath(), m3u8,
+                            i, countDownLatch, 0));
                 }else {
                     poolExecutor.submit(new DownloaderTask(sequence.getUrl(), sequence.getLocalPath(),
-                            sequence.getStartPos(), sequence.getEndPos(), i, downloadInfoThread, countDownLatch));
+                            sequence.getStartPos(), sequence.getEndPos(), i, downloadInfoThread, countDownLatch, 0));
                 }
             }
-            // µÈ´ıËùÓĞ·ÖÆ¬ÈÎÎñÏÂÔØÍê³É
+            // ç­‰å¾…æ‰€æœ‰åˆ†ç‰‡ä»»åŠ¡ä¸‹è½½å®Œæˆ
             countDownLatch.await();
-            // ºÏ²¢ÎÄ¼ş
+            // åˆå¹¶æ–‡ä»¶
             if (merge(fileSequences, file.getPath())) {
                 // clearTemp(filePath);
-                LogUtils.info("ºÏ²¢ÎÄ¼ş¡¾{}¡¿Íê³É", fileName);
+                LogUtils.info("åˆå¹¶æ–‡ä»¶ã€{}ã€‘å®Œæˆ", fileName);
             }
-            // ÅĞ¶ÏÎÄ¼ş¸ñÊ½
+            // åˆ¤æ–­æ–‡ä»¶æ ¼å¼
 //            if (url.endsWith(Constant.M3U8_SUFFIX_NAME)) {
 //                M3U8 m3u8 = parseM3U8Url(url);
-//                // Ê¹ÓÃÈÎÎñ¶ÔÏó¿ªÊ¼ÏÂÔØtsÆ¬¶Î
+//                // ä½¿ç”¨ä»»åŠ¡å¯¹è±¡å¼€å§‹ä¸‹è½½tsç‰‡æ®µ
 //                List<String> list = m3u8.getTsList();
 //                int segmentNum = list.size();
 //
-//                HomeJFrame.appendMessage("½âÎö m3u8 Á´½Ó³É¹¦...");
-//                LogUtils.info("¼ÓÃÜ·½Ê½£º {}", m3u8.getMethod());
-//                LogUtils.info("¼ÓÃÜÃÜÔ¿£º {}", m3u8.getKey());
-//                LogUtils.info("IVÆ«ÒÆÁ¿£º {}", m3u8.getIV());
-//                LogUtils.info("¹² {} ¸ötsÆ¬¶Î", segmentNum);
+//                HomeJFrame.appendMessage("è§£æ m3u8 é“¾æ¥æˆåŠŸ...");
+//                LogUtils.info("åŠ å¯†æ–¹å¼ï¼š {}", m3u8.getMethod());
+//                LogUtils.info("åŠ å¯†å¯†é’¥ï¼š {}", m3u8.getKey());
+//                LogUtils.info("IVåç§»é‡ï¼š {}", m3u8.getIV());
+//                LogUtils.info("å…± {} ä¸ªtsç‰‡æ®µ", segmentNum);
 //                countDownLatch = new CountDownLatch(segmentNum);
 //                poolExecutor = new ThreadPoolExecutor(segmentNum, segmentNum, 0, TimeUnit.SECONDS,
 //                        new ArrayBlockingQueue<>(segmentNum));
-//                // ÅĞ¶Ï .tmp Ä¿Â¼ÊÇ·ñ´æÔÚ£¬ ²»´æÔÚÔò´´½¨ÎÄ¼ş¼Ğ
+//                // åˆ¤æ–­ .tmp ç›®å½•æ˜¯å¦å­˜åœ¨ï¼Œ ä¸å­˜åœ¨åˆ™åˆ›å»ºæ–‡ä»¶å¤¹
 //                File dir = new File(path + "/.tmp/");
-//                // ²»´æÔÚÔòÏÈ´´½¨¸¸ÎÄ¼ş¼Ğ
+//                // ä¸å­˜åœ¨åˆ™å…ˆåˆ›å»ºçˆ¶æ–‡ä»¶å¤¹
 //                if (!dir.exists()) {
-//                    LogUtils.info("ĞÂ½¨ÎÄ¼ş¼Ğ{}", dir.getPath());
+//                    LogUtils.info("æ–°å»ºæ–‡ä»¶å¤¹{}", dir.getPath());
 //                    dir.mkdirs();
 //                }
 //                for (int i = 0; i < list.size(); i++) {
 //                    String tsUrl = list.get(i);
 //                    String tsName = tsUrl.substring(tsUrl.lastIndexOf("/") + 1);
 //                    String desPath = dir.getPath() + "/" + tsName;
-//                    // Ê¹ÓÃ¶àÏß³ÌÏÂÔØËùÓĞµÄtsÎÄ¼şºó£¬ÔÙºÏ²¢ÎÄ¼ş
+//                    // ä½¿ç”¨å¤šçº¿ç¨‹ä¸‹è½½æ‰€æœ‰çš„tsæ–‡ä»¶åï¼Œå†åˆå¹¶æ–‡ä»¶
 //                    poolExecutor.submit(new M3U8DownloaderTask(tsUrl, desPath, m3u8, i, countDownLatch));
 //                }
-//                // µÈ´ı·ÖÆ¬ÈÎÎñÏÂÔØÍê±Ï
+//                // ç­‰å¾…åˆ†ç‰‡ä»»åŠ¡ä¸‹è½½å®Œæ¯•
 //                countDownLatch.await();
-//                // ºÏ²¢ÎÄ¼ş
+//                // åˆå¹¶æ–‡ä»¶
 //                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file, true));
 //                for (int i = 0; i < list.size(); i++) {
 //                    String tsUrl = list.get(i);
@@ -165,99 +172,99 @@ public class Downloader {
 //                    }
 //                    bos.flush();
 //                    bis.close();
-//                    HomeJFrame.appendMessage(tsName + "ºÏ²¢³É¹¦£¡");
+//                    HomeJFrame.appendMessage(tsName + "åˆå¹¶æˆåŠŸï¼");
 //                }
-//                LogUtils.info("ºÏ²¢ÎÄ¼ş¡¾{}¡¿Íê³É", fileName);
+//                LogUtils.info("åˆå¹¶æ–‡ä»¶ã€{}ã€‘å®Œæˆ", fileName);
 //            } else if(contentLength < Constant.PART_NUM * Constant.BYTE_SIZE) {
-//                // ÎÄ¼ş´óĞ¡Ğ¡ÓÚ50MBÖ±½ÓÏÂÔØ
+//                // æ–‡ä»¶å¤§å°å°äº50MBç›´æ¥ä¸‹è½½
 //                countDownLatch = new CountDownLatch(1);
-//                // ´´½¨ÈÎÎñ¶ÔÏó
+//                // åˆ›å»ºä»»åŠ¡å¯¹è±¡
 //                DownloaderTask downloaderTask = new DownloaderTask(url, path, 0, -1, -1, downloadInfoThread, countDownLatch);
 //                new Thread(new FutureTask<>(downloaderTask)).start();
 //                countDownLatch.await();
 //            } else {
-//                // ÎÄ¼ş·Ö¿é, ¼ÆËãÇĞ·ÖºóµÄÎÄ¼şÃ¿Ò»¿éµÄ´óĞ¡
+//                // æ–‡ä»¶åˆ†å—, è®¡ç®—åˆ‡åˆ†åçš„æ–‡ä»¶æ¯ä¸€å—çš„å¤§å°
 //                long size = contentLength / Constant.PART_NUM;
 //                countDownLatch = new CountDownLatch(Constant.PART_NUM);
-//                // Ïß³Ì³Ø¶ÔÏó
+//                // çº¿ç¨‹æ± å¯¹è±¡
 //                poolExecutor = new ThreadPoolExecutor(Constant.PART_NUM, Constant.PART_NUM, 0,
 //                        TimeUnit.SECONDS, new ArrayBlockingQueue<>(Constant.PART_NUM));
-//                // ÏÂÔØÃ¿Ò»¿éÎÄ¼ş
+//                // ä¸‹è½½æ¯ä¸€å—æ–‡ä»¶
 //                for (int i = 0; i < Constant.PART_NUM; i++) {
-//                    //¼ÆËãÏÂÔØÆğÊ¼Î»ÖÃ
+//                    //è®¡ç®—ä¸‹è½½èµ·å§‹ä½ç½®
 //                    long startPos = i * size;
 //                    long endPos = startPos + size;
-//                    // Èç¹û²»ÊÇµÚÒ»¿é£¬ÆğÊ¼Î»ÖÃÒª +1
+//                    // å¦‚æœä¸æ˜¯ç¬¬ä¸€å—ï¼Œèµ·å§‹ä½ç½®è¦ +1
 //                    if (startPos != 0) {
 //                        startPos += 1;
 //                    }
-//                    // ¼ÆËã½áÊøÎ»ÖÃ
+//                    // è®¡ç®—ç»“æŸä½ç½®
 //                    if (i == Constant.PART_NUM - 1) {
-//                        //ÏÂÔØ×îºóÒ»¿é£¬ÏÂÔØÊ£ÓàµÄ²¿·Ö
+//                        //ä¸‹è½½æœ€åä¸€å—ï¼Œä¸‹è½½å‰©ä½™çš„éƒ¨åˆ†
 //                        endPos = 0;
 //                    }
-//                    // ´´½¨ÈÎÎñ¶ÔÏó
+//                    // åˆ›å»ºä»»åŠ¡å¯¹è±¡
 //                    DownloaderTask downloaderTask = new DownloaderTask(url, path, startPos, endPos, i, downloadInfoThread, countDownLatch);
-//                    // ½«ÈÎÎñÌá½»µ½Ïß³Ì³ØÖĞ
+//                    // å°†ä»»åŠ¡æäº¤åˆ°çº¿ç¨‹æ± ä¸­
 //                    poolExecutor.submit(downloaderTask);
 //                }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             HomeJFrame.appendMessage(e.getMessage());
-            return "ÏÂÔØÊ§°Ü";
+            return "ä¸‹è½½å¤±è´¥";
         } finally {
-            // ¹Ø±ÕÁ¬½Ó¶ÔÏó
+            // å…³é—­ä¿¡æ¯è¾“å‡ºçº¿ç¨‹
+            scheduledExecutorService.shutdownNow();
+            // å…³é—­è¿æ¥å¯¹è±¡
             if (httpURLConnection != null) {
                 httpURLConnection.disconnect();
             }
-            // ¹Ø±ÕÏß³Ì³Ø
-            if (poolExecutor != null) {
-                poolExecutor.shutdown();
-            }
-            // ¹Ø±Õ
-            scheduledExecutorService.shutdownNow();
+//            // å…³é—­çº¿ç¨‹æ± 
+//            if (poolExecutor != null) {
+//                poolExecutor.shutdown();
+//            }
         }
-        HomeJFrame.appendMessage(fileName + "ÏÂÔØÍê³É");
-        return "ÏÂÔØÍê³É";
+        HomeJFrame.appendMessage(fileName + "ä¸‹è½½å®Œæˆ");
+        return "ä¸‹è½½å®Œæˆ";
     }
 
     /**
-     * ½âÎöm3u8Á´½Ó
+     * è§£æm3u8é“¾æ¥
      * @param url
      * @return
      * @throws IOException
      */
     private static M3U8 parseM3U8Url(String url) throws IOException {
         M3U8 m3u8 = new M3U8();
-        // 1.½ØÈ¡urlÉèÖÃ¸ùÄ¿Â¼
+        // 1.æˆªå–urlè®¾ç½®æ ¹ç›®å½•
         String basePath = url.substring(0, url.lastIndexOf("/") + 1);
         m3u8.setBasePath(basePath);
-        // 2.¶ÁÈ¡m3u8ÎÄ¼şµÄÄÚÈİ
+        // 2.è¯»å–m3u8æ–‡ä»¶çš„å†…å®¹
         BufferedReader br = new BufferedReader(new InputStreamReader(HttpUtils.getHttpURLConnection(url).getInputStream()));
         String line;
         while ((line = br.readLine()) != null) {
             System.out.println(line);
-            // Èç¹û¸ÃÎÄ¼şº¬ÓĞ¸Ã×Ö¶Î,Ôò±íÊ¾¸Ãm3u8ÎÄ¼şÃ»ÓĞ×ÊÔ´,×ÊÔ´ÖØ¶¨Ïòµ½±»Ö¸ÏòµÄÎÄ¼ş
+            // å¦‚æœè¯¥æ–‡ä»¶å«æœ‰è¯¥å­—æ®µ,åˆ™è¡¨ç¤ºè¯¥m3u8æ–‡ä»¶æ²¡æœ‰èµ„æº,èµ„æºé‡å®šå‘åˆ°è¢«æŒ‡å‘çš„æ–‡ä»¶
             if (line.endsWith(Constant.M3U8_SUFFIX_NAME)) {
-                LogUtils.info("m3u8ÎÄ¼şÖØ¶¨Ïò£¡£¡£¡");
+                LogUtils.info("m3u8æ–‡ä»¶é‡å®šå‘ï¼ï¼ï¼");
                 return parseM3U8Url(basePath + line);
             }
-            // °üº¬´Ë×Ö¶ÎËµÃ÷ÎÄ¼şÊÇ¼ÓÃÜµÄ, METHOD²ÎÊı±íÊ¾¼ÓÃÜ·½·¨£¬URI±íÊ¾ÃØÔ¿ÎÄ¼ş
+            // åŒ…å«æ­¤å­—æ®µè¯´æ˜æ–‡ä»¶æ˜¯åŠ å¯†çš„, METHODå‚æ•°è¡¨ç¤ºåŠ å¯†æ–¹æ³•ï¼ŒURIè¡¨ç¤ºç§˜é’¥æ–‡ä»¶
             if(line.startsWith("#EXT-X-KEY")) {
                 line = line.substring(line.indexOf(":") + 1);
                 // METHOD=AES-128,URI="key.key"
                 String[] params = line.split(",");
                 for (String temp : params){
-                    // ¼ÓÃÜ·½·¨×Ö¶Î
+                    // åŠ å¯†æ–¹æ³•å­—æ®µ
                     if(temp.contains("METHOD") || temp.contains("method")){
                         String method = temp.split("=",2)[1];
                         m3u8.setMethod(method);
                     }
-                    // ÃÜÔ¿
+                    // å¯†é’¥
                     if(temp.contains("URI") || temp.contains("uri")){
                         String uri = temp.split("=",2)[1].replace("\"","");
                         String key;
-                        // »ñÈ¡key
+                        // è·å–key
                         try{
                             if(uri.contains(Constant.HTTP_PROTOCOL_PREFIX) || uri.contains(Constant.HTTPS_PROTOCOL_PREFIX)) {
                                 key = getKey(uri);
@@ -270,14 +277,14 @@ public class Downloader {
                         }
                         m3u8.setKey(key);
                     }
-                    // IV×Ö¶Î
+                    // IVå­—æ®µ
                     if (temp.contains("IV") || temp.contains("iv")) {
                         String iv = temp.split("=",2)[1].replace("\"","");
                         m3u8.setIV(iv);
                     }
                 }
             }
-            // tsÊı¾İÆ¬
+            // tsæ•°æ®ç‰‡
             if (line.endsWith(Constant.TS_SUFFIX_NAME)) {
                 if (line.startsWith(Constant.HTTP_PROTOCOL_PREFIX) || line.startsWith(Constant.HTTPS_PROTOCOL_PREFIX)) {
                     m3u8.getTsList().add(line);
@@ -286,37 +293,37 @@ public class Downloader {
                 }
             }
         }
-        // ¹ØÁ÷
+        // å…³æµ
         br.close();
         return m3u8;
     }
 
     /**
-     * Á¬½Óµ½Ö¸¶¨Url
+     * è¿æ¥åˆ°æŒ‡å®šUrl
      * @param url
      * @return
      * @throws IOException
      */
     private static String getKey(String url) throws IOException {
-        // ÍøÂçÊäÈëÁ÷
+        // ç½‘ç»œè¾“å…¥æµ
         BufferedReader br = new BufferedReader(new InputStreamReader(HttpUtils.getHttpURLConnection(url).getInputStream()));
         String key = br.readLine();
-        // ¹Ø±ÕÊäÈëÁ÷
+        // å…³é—­è¾“å…¥æµ
         br.close();
         return key;
     }
 
     /**
-     *  ÎÄ¼şºÏ²¢
+     *  æ–‡ä»¶åˆå¹¶
      * @param fileName
      * @return
      */
-    public boolean merge(List<FileSequence> fileSequences, String fileName) {
-        // µ¥¸öÎÄ¼şÎŞĞèºÏ²¢
+    public boolean merge(List<FileSequence> fileSequences, String fileName) throws IOException {
+        // å•ä¸ªæ–‡ä»¶æ— éœ€åˆå¹¶
         if (fileSequences.size() <= 1) {
             return false;
         }
-        LogUtils.info("¿ªÊ¼ºÏ²¢ÎÄ¼ş{}", fileName);
+        LogUtils.info("å¼€å§‹åˆå¹¶æ–‡ä»¶{}", fileName);
         byte[] buffer = new byte[Constant.BYTE_SIZE];
         int len = -1;
         try (RandomAccessFile accessFile = new RandomAccessFile(fileName, "rw")) {
@@ -327,10 +334,7 @@ public class Downloader {
                     }
                 }
             }
-            LogUtils.info("ÎÄ¼şºÏ²¢Íê±Ï{}", fileName);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            LogUtils.info("æ–‡ä»¶åˆå¹¶å®Œæ¯•{}", fileName);
         }
         return true;
     }
@@ -338,13 +342,13 @@ public class Downloader {
 }
 
 class FileSequence {
-    // Ô¶¶ËÂ·¾¶
+    // è¿œç«¯è·¯å¾„
     private String url;
-    // ±¾µØÂ·¾¶
+    // æœ¬åœ°è·¯å¾„
     private String localPath;
-    // ÎÄ¼şÆ¬ÆğÊ¼Î»ÖÃ
+    // æ–‡ä»¶ç‰‡èµ·å§‹ä½ç½®
     private long startPos;
-    // ÎÄ¼şÆ¬½áÊøÎ»ÖÃ
+    // æ–‡ä»¶ç‰‡ç»“æŸä½ç½®
     private long endPos;
 
     public FileSequence(String url, String localPath) {
@@ -404,13 +408,13 @@ class FileSequence {
 
 
 class M3U8 {
-    // ´æ´¢ÎÄ¼şµÄ¸ùÂ·¾¶
+    // å­˜å‚¨æ–‡ä»¶çš„æ ¹è·¯å¾„
     private String basePath;
-    // ½âÃÜËã·¨Ãû³Æ
+    // è§£å¯†ç®—æ³•åç§°
     private String method = "AES-128";
-    // ÃÜÔ¿
+    // å¯†é’¥
     private String key;
-    // ¶¨ÒåÒ»¸ö16byteµÄ³õÊ¼ÏòÁ¿£¬Èç¹ûm3u8Ã»ÓĞIVÖµ£¬ÔòÉèÖÃÎª0¼´¿É
+    // å®šä¹‰ä¸€ä¸ª16byteçš„åˆå§‹å‘é‡ï¼Œå¦‚æœm3u8æ²¡æœ‰IVå€¼ï¼Œåˆ™è®¾ç½®ä¸º0å³å¯
     private String IV = "0000000000000000";
 
     private List<String> tsList = new LinkedList<>();

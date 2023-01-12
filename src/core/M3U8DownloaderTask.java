@@ -22,58 +22,64 @@ public class M3U8DownloaderTask implements Callable<Boolean> {
 
     private CountDownLatch countDownLatch;
 
-    public M3U8DownloaderTask(){}
+    private int frequency;
 
-    public M3U8DownloaderTask(String url, String path, M3U8 m3u8, int index, CountDownLatch countDownLatch) {
+    public M3U8DownloaderTask(String url, String path, M3U8 m3u8, int index, CountDownLatch countDownLatch, int frequency) {
         this.url = url;
         this.path = path;
         this.m3u8 = m3u8;
         this.index = index;
         this.countDownLatch = countDownLatch;
+        this.frequency = frequency;
     }
 
     @Override
     public Boolean call() throws Exception {
+        String msg = "";
         File file = new File(this.path);
         if (file.exists() && FileUtils.getFileContentLength(file.getPath()) >= HttpUtils.getHttpFileContentLength(url)) {
             countDownLatch.countDown();
             return true;
         }
-        LogUtils.info("ø™ ºœ¬‘ÿ {}", this.url);
+        LogUtils.info("ÂºÄÂßã‰∏ãËΩΩ {}", this.url);
         try (
-            // ªÒµ√Õ¯¬Á ‰»Î¡˜
-            BufferedInputStream bis = new BufferedInputStream(HttpUtils.getHttpURLConnection(url).getInputStream());
-            // ◊÷Ω⁄ ˝◊È ‰≥ˆ¡˜¥Ê¥¢√ø“ª∏ˆts∆¨∂Œµƒ◊÷Ω⁄¡˜
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            // ±æµÿ ‰≥ˆ¡˜
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+                // Ëé∑ÂæóÁΩëÁªúËæìÂÖ•ÊµÅ
+                BufferedInputStream bis = new BufferedInputStream(HttpUtils.getHttpURLConnection(url).getInputStream());
+                // Â≠óËäÇÊï∞ÁªÑËæìÂá∫ÊµÅÂ≠òÂÇ®ÊØè‰∏Ä‰∏™tsÁâáÊÆµÁöÑÂ≠óËäÇÊµÅ
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                // Êú¨Âú∞ËæìÂá∫ÊµÅ
+                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
         ) {
             byte[] flush = new byte[Constant.BYTE_SIZE];
             int len;
             while ((len = bis.read(flush)) != -1) {
                 os.write(flush, 0, len);
             }
-            // µ√µΩ“ª∏ˆTsŒƒº˛µƒ◊÷Ω⁄¡˜, »ª∫ÛΩ¯––Ω‚√‹≤Ÿ◊˜
+            // ÂæóÂà∞‰∏Ä‰∏™TsÊñá‰ª∂ÁöÑÂ≠óËäÇÊµÅ, ÁÑ∂ÂêéËøõË°åËß£ÂØÜÊìç‰Ωú
             byte [] tsByte = FileUtils.decrypt(os.toByteArray(), m3u8.getMethod(), m3u8.getKey(), m3u8.getIV());
 
             if (tsByte != null) {
                 bos.write(tsByte);
             }
             bos.flush();
-            // πÿ¡˜
-            bos.close();
-            bis.close();
-            countDownLatch.countDown();
-            String msg = String.format("µ⁄ %s ∏ˆ∆¨∂Œ°æ%s°øœ¬‘ÿ≥…π¶£°", this.index, file.getName());
+            msg = String.format("Á¨¨ %s ‰∏™ÁâáÊÆµ„Äê%s„Äë‰∏ãËΩΩÊàêÂäüÔºÅ", this.index + 1, file.getName());
             LogUtils.info(msg);
             HomeJFrame.appendMessage(msg);
+            countDownLatch.countDown();
         } catch (Exception e) {
-            LogUtils.info("{} œ¬‘ÿ ß∞‹£°", file.getName());
-            // ÷ÿø™œﬂ≥Ãœ¬‘ÿŒƒº˛
-            LogUtils.info("ø™ º÷ÿ–¬œ¬‘ÿ " + file.getName() + "£°");
-            new Thread (() -> {
-                new M3U8DownloaderTask(this.url, this.path, this.m3u8, this.index, countDownLatch);
-            }).start();
+            e.printStackTrace();
+            if (this.frequency < Constant.TRY_TIME) {
+                msg = String.format("„Äê%s„Äë‰∏ãËΩΩÂ§±Ë¥•ÔºÅÂºÄÂßãÁ¨¨%sÊ¨°ÈáçËØï", file.getName(), this.frequency + 1);
+                LogUtils.info(msg);
+                HomeJFrame.appendMessage(msg);
+                // ÈáçÂºÄÁ∫øÁ®ã‰∏ãËΩΩÊñá‰ª∂
+                new Thread(() -> {
+                    new M3U8DownloaderTask(this.url, this.path, this.m3u8, this.index, countDownLatch, this.frequency + 1);
+                }).start();
+            }else {
+                LogUtils.error("{} ‰∏ãËΩΩÂ§±Ë¥•ÔºÅ", file.getName());
+                countDownLatch.countDown();
+            }
         }
         return true;
     }

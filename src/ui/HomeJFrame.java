@@ -1,9 +1,9 @@
 package ui;
 
-import com.sun.javafx.application.PlatformImpl;
 import common.Constant;
 import core.Downloader;
 import javafx.stage.DirectoryChooser;
+import com.sun.javafx.application.PlatformImpl;
 import utils.FileUtils;
 import utils.StringUtils;
 import javax.swing.*;
@@ -16,77 +16,78 @@ import java.io.File;
 
 
 /**
- * ÏÂÔØÆ÷Ö÷Ò³Ãæ
+ * ä¸‹è½½å™¨ä¸»é¡µé¢
  * @author zyj
  */
 public class HomeJFrame extends JFrame implements ActionListener {
 
-    // ¶¨Òå´°¿ÚµÄ¿íºÍ¸ß
+    // å®šä¹‰çª—å£çš„å®½å’Œé«˜
     private int width;
-    private int length;
+    private int height;
 
-    // ËùÓÐÐèÒªµÄ¿Ø¼þ
-    private JTextField urlText = new JTextField(50);
+    // æ‰€æœ‰éœ€è¦çš„æŽ§ä»¶
+    private JTextField urlText = new JTextField();
 
-    private JButton downloadButton = new JButton("ÏÂÔØ");
-    private JButton showButton = new JButton("ÔÚÎÄ¼þ¼ÐÖÐÏÔÊ¾");
+    private JButton downloadButton = new JButton("ä¸‹è½½");
+    private JButton showButton = new JButton("åœ¨æ–‡ä»¶å¤¹ä¸­æ˜¾ç¤º");
 
-    // ÏÂÔØ±£´æÂ·¾¶ÎÄ±¾Óò
-    private JTextField savePathText = new JTextField(45);
-    // ±£´æÎ»ÖÃ
+    // ä¸‹è½½ä¿å­˜è·¯å¾„æ–‡æœ¬åŸŸ
+    private JTextField savePathText = new JTextField();
+    // ä¿å­˜ä½ç½®
     private static String savePath;
 
-    private JButton modifyPathButton = new JButton("Ñ¡Ôñ±£´æÎ»ÖÃ");
+    private JButton modifyPathButton = new JButton("é€‰æ‹©ä¿å­˜ä½ç½®");
 
-    // ÐÅÏ¢Êä³öÎÄ±¾Óò
-    private static JTextArea infoArea = new JTextArea(15, 102);
+    // ä¿¡æ¯è¾“å‡ºæ–‡æœ¬åŸŸ
+    // private static JTextArea infoArea = new JTextArea(15, 102);
+    private static JTextArea infoArea = new JTextArea();
 
     private static JScrollPane scroll = new JScrollPane(infoArea);
 
-    // ´°¿ÚÃæ°å
+    // çª—å£é¢æ¿
     private JPanel contentPanel = null;
 
-    // ÏÂÔØÆ÷
+    // ä¸‹è½½å™¨
     private Downloader downloader = new Downloader();
 
     public HomeJFrame() {
-        // »ñÈ¡µ±Ç°ÆÁÄ»µÄ´óÐ¡£¬¸ù¾ÝÆÁÄ»´óÐ¡È·¶¨´°¿Ú´óÐ¡
+        // èŽ·å–å½“å‰å±å¹•çš„å¤§å°ï¼Œæ ¹æ®å±å¹•å¤§å°ç¡®å®šçª—å£å¤§å°
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         this.width = new Double(screenSize.getWidth() * 0.6).intValue();
-        this.length = new Double(screenSize.getHeight() * 0.6).intValue();
-        this.setTitle("M3U8ÏÂÔØÆ÷");
-        this.setSize(this.width, this.length);
+        this.height = new Double(screenSize.getHeight() * 0.6).intValue();
+        this.setTitle("M3U8ä¸‹è½½å™¨");
+        this.setSize(this.width, this.height);
         this.setVisible(true);
-        // ¾ÓÖÐ
+        // å±…ä¸­
         this.setLocationRelativeTo(null);
-        // µãXÍË³ö³ÌÐò
+        // ç‚¹Xé€€å‡ºç¨‹åº
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         contentPanel = (JPanel) this.getContentPane();
-        // ³õÊ¼»¯ÆäËû¿Ø¼þ
+        // åˆå§‹åŒ–å…¶ä»–æŽ§ä»¶
         initComponents();
     }
 
-    // ´¦Àí°´¼ü¼àÌý
+    // å¤„ç†æŒ‰é”®ç›‘å¬
     @Override
     public void actionPerformed(ActionEvent e) {
-        // ÏÂÔØ°´Å¥ÊÂ¼þ
+        // ä¸‹è½½æŒ‰é’®äº‹ä»¶
         if (e.getSource() == downloadButton) {
             String url = urlText.getText();
             if (StringUtils.isEmpty(url)) {
-                JOptionPane.showMessageDialog(contentPanel, "ÇëÊäÈë×ÊÔ´Á´½Ó");
+                JOptionPane.showMessageDialog(contentPanel, "è¯·è¾“å…¥èµ„æºé“¾æŽ¥");
                 return;
             }
             if (StringUtils.isEmpty(savePathText.getText()) || StringUtils.isEmpty(savePath)) {
-                JOptionPane.showMessageDialog(contentPanel, "ÇëÉèÖÃ±£´æÎ»ÖÃ");
+                JOptionPane.showMessageDialog(contentPanel, "è¯·è®¾ç½®ä¿å­˜ä½ç½®");
                 return;
             }
-            // ¿ªÆôÏß³ÌÏÂÔØÎÄ¼þ
+            // å¼€å¯çº¿ç¨‹ä¸‹è½½æ–‡ä»¶
             new Thread(() -> {
                 String result = downloader.downloadFile(url, savePath);
                 JOptionPane.showMessageDialog(contentPanel, result);
             }).start();
         }else if (e.getSource() == showButton) {
-            // ÔÚÎÄ¼þ¼ÐÖÐÏÔÊ¾
+            // åœ¨æ–‡ä»¶å¤¹ä¸­æ˜¾ç¤º
             try {
                 Desktop.getDesktop().open(new File(savePath));
             } catch (Exception ex) {
@@ -95,7 +96,7 @@ public class HomeJFrame extends JFrame implements ActionListener {
         } else if (e.getSource() == modifyPathButton) {
             PlatformImpl.startup(() -> {
                 DirectoryChooser dirChooser = new DirectoryChooser();
-                dirChooser.setTitle("ÇëÑ¡ÔñÒª±£´æµÄÂ·¾¶");
+                dirChooser.setTitle("è¯·é€‰æ‹©è¦ä¿å­˜çš„è·¯å¾„");
                 dirChooser.setInitialDirectory(new File(savePath).getParentFile());
                 File choicePath = dirChooser.showDialog(null);
                 if (null != choicePath) {
@@ -109,43 +110,52 @@ public class HomeJFrame extends JFrame implements ActionListener {
     }
 
     /**
-     * ³õÊ¼»¯ÆäËû×é¼þ
+     * åˆå§‹åŒ–å…¶ä»–ç»„ä»¶
      */
     private void initComponents() {
         contentPanel.setLayout(new GridLayout(2, 1, 0, 0));
         // contentPanel.setBorder(BorderFactory.createLineBorder(Color.RED));
 
         JPanel mainPanel = new JPanel(new GridLayout(1, 2, 10, 10));
-        // ×ó±ßÏÂÔØÃæ°å
+        // å·¦è¾¹ä¸‹è½½é¢æ¿
         JPanel downloadPanel = new JPanel();
-        // urlText.setBorder(BorderFactory.createCompoundBorder(new LineBorder(Color.BLACK), "±êÌâ"));
-        // urlText.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "±êÌâ"));
-        // Á´½ÓÎÄ±¾¿ò
+        // urlText.setBorder(BorderFactory.createCompoundBorder(new LineBorder(Color.BLACK), "æ ‡é¢˜"));
+        // urlText.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "æ ‡é¢˜"));
+        // é“¾æŽ¥æ–‡æœ¬æ¡†
+        FontMetrics metrics = urlText.getFontMetrics(urlText.getFont());
+        urlText.setColumns((int)Math.round(this.width * 0.5 / metrics.getAscent()));
+        System.out.println("widthï¼š" + this.width + ">>>" + "heightï¼š" + this.height);
+        System.out.println("æ–‡æœ¬æ¡†åˆ—æ•°ï¼š" + urlText.getColumns());
+
         downloadPanel.add(urlText);
-        // °´Å¥×¢²áÊÂ¼þ¼àÌýÆ÷
+        downloadButton.setFocusable(false);
+        // æŒ‰é’®æ³¨å†Œäº‹ä»¶ç›‘å¬å™¨
         downloadButton.addActionListener(this);
-        // ÏÂÔØ°´Å¥
+        // ä¸‹è½½æŒ‰é’®
         downloadPanel.add(downloadButton);
-        // ÏÔÊ¾°´Å¥
+        // æ˜¾ç¤ºæŒ‰é’®
+        showButton.setFocusable(false);
         showButton.addActionListener(this);
         downloadPanel.add(showButton);
         // downloadPanel.setBorder(BorderFactory.createLineBorder(Color.ORANGE));
 
-        // ÓÒ±ßÉèÖÃÃæ°å
+        // å³è¾¹è®¾ç½®é¢æ¿
         JPanel settingPanel = new JPanel();
         savePath = FileUtils.getConfig(Constant.CONFIG_PATH, Constant.PATH_NAME_KEY);
         if (null == savePath) {
             savePath = FileSystemView.getFileSystemView().getHomeDirectory().getPath();
         }
         savePathText.setText(savePath);
-        // savePathText.setFont(new Font("ËÎÌå", Font.PLAIN,18));
         savePathText.setEditable(false);
-        savePathText.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "±£´æÎ»ÖÃ"));
+        FontMetrics savePathMetrics = savePathText.getFontMetrics(savePathText.getFont());
+        savePathText.setColumns((int)Math.round(this.width * 0.5 / savePathMetrics.getAscent()));
+        savePathText.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "ä¿å­˜ä½ç½®"));
         settingPanel.add(savePathText);
         settingPanel.add(modifyPathButton);
+        modifyPathButton.setFocusable(false);
         modifyPathButton.addActionListener(this);
-        JLabel authorLabel = new JLabel("×÷Õß£ºÐ¡ÐÜ");
-        JLabel versionLabel = new JLabel("°æ±¾£º" + Constant.VERSION);
+        JLabel authorLabel = new JLabel("ä½œè€…ï¼šå°ç†Š");
+        JLabel versionLabel = new JLabel("ç‰ˆæœ¬ï¼š" + Constant.VERSION);
         settingPanel.add(authorLabel);
         settingPanel.add(versionLabel);
         // settingPanel.setBorder(BorderFactory.createLineBorder(Color.YELLOW));
@@ -154,20 +164,23 @@ public class HomeJFrame extends JFrame implements ActionListener {
         mainPanel.add(settingPanel);
         // mainPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
 
-        // ÐÅÏ¢Êä³öÃæ°å
+        // ä¿¡æ¯è¾“å‡ºé¢æ¿
         JPanel infoPanel = new JPanel();
         infoArea.setLineWrap(true);
         infoArea.setEditable(false);
         infoArea.setWrapStyleWord(true);
+        System.out.println(contentPanel.getWidth() - 20);
+        infoArea.setBounds(0, 0 , contentPanel.getWidth() - 20, contentPanel.getHeight());
+        infoArea.setRows(15);
         // infoArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        // ÉèÖÃ±ß¿ò±ß¾à
+        // è®¾ç½®è¾¹æ¡†è¾¹è·
         // infoArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.GRAY),
         //        BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-        // infoArea.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "ÐÅÏ¢"));
-        // infoArea.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "ÐÅÏ¢"));
+        // infoArea.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "ä¿¡æ¯"));
+        // infoArea.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "ä¿¡æ¯"));
         // infoPanel.setBorder(BorderFactory.createLineBorder(Color.BLUE));
         infoPanel.add(scroll);
-        infoPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "ÐÅÏ¢"));
+        infoPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(Color.BLACK), "ä¿¡æ¯"));
 
         contentPanel.add(mainPanel);
         contentPanel.add(infoPanel);
@@ -175,39 +188,39 @@ public class HomeJFrame extends JFrame implements ActionListener {
     }
 
     /**
-     * ×·¼ÓÐÅÏ¢µ½ÐÅÏ¢Êä³öÇøÓò
-     * ¶àÏß³Ì²Ù×÷£¬Ê¹ÓÃsynchronized
+     * è¿½åŠ ä¿¡æ¯åˆ°ä¿¡æ¯è¾“å‡ºåŒºåŸŸ
+     * å¤šçº¿ç¨‹æ“ä½œï¼Œä½¿ç”¨synchronized
      * @param msg
      */
     public static synchronized void appendMessage(String msg) {
-        infoArea.append("[" + StringUtils.formatTime(Constant.DATE_FORMAT_PATTERN) + "] " + msg + "\r\n");
-        // ½ø¶ÈÌõ¸úËæÎÄ×Ö¹ö¶¯
+        infoArea.append(" [" + StringUtils.formatTime(Constant.DATE_FORMAT_PATTERN) + "] " + msg + "\r\n");
+        // è¿›åº¦æ¡è·Ÿéšæ–‡å­—æ»šåŠ¨
         JScrollBar scrollBar = scroll.getVerticalScrollBar();
         scrollBar.setValue(scrollBar.getMaximum());
     }
 
     /**
-     * Ð´ÈëÐÅÏ¢µ½ÐÅÏ¢Êä³öÇøÓò
+     * å†™å…¥ä¿¡æ¯åˆ°ä¿¡æ¯è¾“å‡ºåŒºåŸŸ
      * @param msg
      */
     public static synchronized void writeMessage(String msg) {
-        infoArea.setText("[" + StringUtils.formatTime(Constant.DATE_FORMAT_PATTERN) + "] " + msg + "\r\n");
+        infoArea.setText(" [" + StringUtils.formatTime(Constant.DATE_FORMAT_PATTERN) + "] " + msg + "\r\n");
     }
 
     public static void main(String[] args) {
-        Font song = new Font("ËÎÌå", Font.PLAIN,18);
-        Font infoFont = new Font("ËÎÌå", Font.BOLD,24);
-        // Font font1 = new Font("»ªÎÄÐÐ¿¬", Font.PLAIN, 18);
-        Font font2 = new Font("Î¢ÈíºÚÌå", Font.PLAIN, 12);
+        Font song = new Font("å®‹ä½“", Font.PLAIN, Constant.FONT_SIZE);
+        Font infoFont = new Font("å®‹ä½“", Font.BOLD,Constant.FONT_SIZE);
+        // Font font1 = new Font("åŽæ–‡è¡Œæ¥·", Font.PLAIN, 18);
+        Font font2 = new Font("å¾®è½¯é»‘ä½“", Font.PLAIN, 12);
 
-        // ×ÖÌåµÄÐÞÊÎ
+        // å­—ä½“çš„ä¿®é¥°
         UIManager.put("TextField.font", song);
         UIManager.put("TextArea.font", infoFont);
         UIManager.put("Button.font", font2);
+        UIManager.put("TitledBorder.font", font2);
         // UIManager.put("Table.font", font2);
         // UIManager.put("TableHeader.font", font1);
-        UIManager.put("TitledBorder.font", font2);
-        // ·ÀÖ¹Ïß³ÌËÀËø
+        // é˜²æ­¢çº¿ç¨‹æ­»é”
         SwingUtilities.invokeLater(() ->
                 new HomeJFrame().setVisible(true)
         );

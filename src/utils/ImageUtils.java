@@ -6,54 +6,54 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * ¼ÓÔØÍ¼Æ¬¹¤¾ßÀà£¬ÊµÏÖ¼ÓÔØ¹ıµÄÍ¼Æ¬¿ÉÒÔÏÂ´ÎÖ±½Ó»ñÈ¡
+ * åŠ è½½å›¾ç‰‡å·¥å…·ç±»ï¼Œå®ç°åŠ è½½è¿‡çš„å›¾ç‰‡å¯ä»¥ä¸‹æ¬¡ç›´æ¥è·å–
  * @author zyj
  */
 public class ImageUtils {
 
-    // ¶¨ÒåMap¼¯ºÏ£¨¼ü£ºÍ¼Æ¬Â·¾¶£¬ Öµ Í¼Æ¬¿Ø¼ş£©
+    // å®šä¹‰Mapé›†åˆï¼ˆé”®ï¼šå›¾ç‰‡è·¯å¾„ï¼Œ å€¼ å›¾ç‰‡æ§ä»¶ï¼‰
     public static Map<String, ImageIcon> mapImage = new HashMap<>();
 
     /**
-     * »ñÈ¡Í¼Æ¬¿Ø¼ş
+     * è·å–å›¾ç‰‡æ§ä»¶
      *
      * */
     public static ImageIcon getImageIcon(String path) {
-        //ÅĞ¶ÏÍ¼Æ¬ÊÇ·ñ¼ÓÔØ¹ı
-        if(mapImage.containsKey(path)) {    //¼ÓÔØ¹ıµÄÍ¼Æ¬£¬¾ÍÖ±½Ó·µ»ØÍ¼Æ¬¿Ø¼ş
+        //åˆ¤æ–­å›¾ç‰‡æ˜¯å¦åŠ è½½è¿‡
+        if(mapImage.containsKey(path)) {    //åŠ è½½è¿‡çš„å›¾ç‰‡ï¼Œå°±ç›´æ¥è¿”å›å›¾ç‰‡æ§ä»¶
             return mapImage.get(path);
         }
-        // Ã»ÓĞ¼ÓÔØ¹ıµÄÍ¼Æ¬
+        // æ²¡æœ‰åŠ è½½è¿‡çš„å›¾ç‰‡
         ImageIcon image = new ImageIcon(path);
         mapImage.put(path, image);
         return image;
     }
 
     /**
-     * »ñÈ¡Ö¸¶¨´óĞ¡µÄÍ¼Æ¬¿Ø¼ş
+     * è·å–æŒ‡å®šå¤§å°çš„å›¾ç‰‡æ§ä»¶
      * @param path
      * @param width
      * @param height
      */
     public static ImageIcon getImageIcon(String path, int width, int height) {
-        // µ÷ÓÃImage¿Ø¼şµÄ·½·¨
+        // è°ƒç”¨Imageæ§ä»¶çš„æ–¹æ³•
         Image image = getImageIcon(path).getImage();
         Image scaleImage = image.getScaledInstance(width, height, Image.SCALE_DEFAULT);
-        // Í¼±ê¿Ø¼şÀï·ÅÍ¼Æ¬¿Ø¼ş
+        // å›¾æ ‡æ§ä»¶é‡Œæ”¾å›¾ç‰‡æ§ä»¶
         return new ImageIcon(scaleImage);
     }
 
     /**
-     * Ëõ·ÅÍ¼Æ¬±ÈÀıºó£¬·µ»ØËõ·ÅºóµÄÍ¼Æ¬¿Ø¼ş
+     * ç¼©æ”¾å›¾ç‰‡æ¯”ä¾‹åï¼Œè¿”å›ç¼©æ”¾åçš„å›¾ç‰‡æ§ä»¶
      * @param image
      * @param scale
      */
     public static ImageIcon getScaleImageIcon(Image image, double scale) {
-        // µ÷ÓÃImage¿Ø¼şµÄ·½·¨
+        // è°ƒç”¨Imageæ§ä»¶çš„æ–¹æ³•
         int newWidth = (int) (image.getWidth(null) * scale);
-        int newHigt = (int) (image.getHeight(null) * scale);
-        Image scaleImage = image.getScaledInstance(newWidth, newHigt, Image.SCALE_DEFAULT);
-        //Í¼±ê¿Ø¼şÀï·ÅÍ¼Æ¬¿Ø¼ş
+        int newHeigt = (int) (image.getHeight(null) * scale);
+        Image scaleImage = image.getScaledInstance(newWidth, newHeigt, Image.SCALE_DEFAULT);
+        //å›¾æ ‡æ§ä»¶é‡Œæ”¾å›¾ç‰‡æ§ä»¶
         return new ImageIcon(scaleImage);
     }
 

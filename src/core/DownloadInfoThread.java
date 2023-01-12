@@ -8,16 +8,16 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class DownloadInfoThread implements Runnable {
 
-    // ÏÂÔØÎÄ¼ş×Ü´óĞ¡
+    // ä¸‹è½½æ–‡ä»¶æ€»å¤§å°
     private final long httpFileContentLength;
 
-    // ±¾µØÒÑÏÂÔØÎÄ¼şµÄ´óĞ¡£¬
+    // æœ¬åœ°å·²ä¸‹è½½æ–‡ä»¶çš„å¤§å°ï¼Œ
     public LongAdder finishedSize = new LongAdder();
 
-    // ±¾´ÎÀÛ¼ÆÏÂÔØµÄ´óĞ¡
+    // æœ¬æ¬¡ç´¯è®¡ä¸‹è½½çš„å¤§å°
     public volatile LongAdder downSize = new LongAdder();
 
-    // Ç°Ò»´ÎÏÂÔØµÄ´óĞ¡
+    // å‰ä¸€æ¬¡ä¸‹è½½çš„å¤§å°
     public double prevSize;
 
     public LongAdder getDownSize() {
@@ -35,29 +35,29 @@ public class DownloadInfoThread implements Runnable {
 
     @Override
     public void run() {
-        // ¼ÆËãÎÄ¼ş×Ü´óĞ¡ µ¥Î»£ºmb
+        // è®¡ç®—æ–‡ä»¶æ€»å¤§å° å•ä½ï¼šmb
         String httpFileSize = String.format("%.2f", httpFileContentLength / Constant.MB);
 
-        // ¼ÆËãÃ¿ÃëÏÂÔØËÙ¶È kb
+        // è®¡ç®—æ¯ç§’ä¸‹è½½é€Ÿåº¦ kb
         int speed = (int)((downSize.doubleValue() - prevSize) / 1024d);
         prevSize = downSize.doubleValue();
 
-        // Ê£ÓàÎÄ¼şµÄ´óĞ¡
+        // å‰©ä½™æ–‡ä»¶çš„å¤§å°
         double remainSize = httpFileContentLength - finishedSize.doubleValue() - downSize.doubleValue();
 
-        // ¼ÆËãÊ£ÓàÊ±¼ä
+        // è®¡ç®—å‰©ä½™æ—¶é—´
         String remainTime = String.format("%.1f", remainSize / 1024d / speed);
 
         if ("Infinity".equalsIgnoreCase(remainTime)) {
             remainTime = "-";
         }
 
-        // ÒÑÏÂÔØ´óĞ¡
+        // å·²ä¸‹è½½å¤§å°
         String currentFileSize = String.format("%.2f", (downSize.doubleValue() - finishedSize.doubleValue()) / Constant.MB);
-        String downInfo = String.format("ÒÑÏÂÔØ %smb / %smb£¬ËÙ¶È %skb/s£¬Ô¤¼ÆÊ£ÓàÊ±¼ä %ss", currentFileSize, httpFileSize, speed, remainTime);
+        String downInfo = String.format("å·²ä¸‹è½½ %smb / %smbï¼Œé€Ÿåº¦ %skb/sï¼Œé¢„è®¡å‰©ä½™æ—¶é—´ %ss", currentFileSize, httpFileSize, speed, remainTime);
 
         LogUtils.info(downInfo);
-        // ÏÔÊ¾ĞÅÏ¢µ½½çÃæ
+        // æ˜¾ç¤ºä¿¡æ¯åˆ°ç•Œé¢
         HomeJFrame.appendMessage(downInfo);
     }
 }

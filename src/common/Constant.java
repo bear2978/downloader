@@ -2,42 +2,45 @@ package common;
 
 public interface Constant {
 
-    // °æ±¾
+    // ç‰ˆæœ¬
     String VERSION = "1.0";
-    // httpÁ¬½Ó³¬Ê±Ê±¼ä
+    // é¡µé¢å­—ä½“å¤§å°
+    int FONT_SIZE = 24;
+    // httpè¿æ¥è¶…æ—¶æ—¶é—´
     int TIME_OUT = 10 * 1000;
-    // MBµ¥Î»»»Ëã
+    // æ–‡ä»¶ç‰‡ä¸‹è½½å¤±è´¥é‡è¯•æ¬¡æ•°
+    int TRY_TIME = 3;
+    // MBå•ä½æ¢ç®—
     double MB = 1024d * 1024d;
-    // Buffer´óĞ¡
+    // Bufferå¤§å°
     int BYTE_SIZE = 1024 * 10;
-    // ÅäÖÃÎÄ¼şÏà¶ÔÂ·¾¶
-    String CONFIG_PATH = "./src/resource/config.ini";
-    // ±£´æÂ·¾¶ key
+    // é…ç½®æ–‡ä»¶ç›¸å¯¹è·¯å¾„
+    String CONFIG_PATH = "./config.ini";
+    // ä¿å­˜è·¯å¾„ key
     String PATH_NAME_KEY = "savePath";
 
-    // ÎÄ¼şÆ¬ÁÙÊ±±£´æÄ¿Â¼
-    String TMP_PATH = "/.tmp/";
-    // ÎÄ¼şÇĞ·ÖÆ¬Êı
+    // æ–‡ä»¶ç‰‡ä¸´æ—¶ä¿å­˜ç›®å½•
+    String TMP_PATH = "/.cache/";
+    // æ–‡ä»¶åˆ‡åˆ†ç‰‡æ•°
     int PART_NUM = 5;
-    // ÎÄ¼şÆ¬Ãû
-    String PART_NAME = "part";
-
-    // tsÎÄ¼şÎ²×º
+    // æ–‡ä»¶ç‰‡å°¾ç¼€å
+    String PART_NAME = ".part";
+    // tsæ–‡ä»¶å°¾ç¼€
     String TS_SUFFIX_NAME = ".ts";
-    // mp4ÎÄ¼şÎ²×º
+    // mp4æ–‡ä»¶å°¾ç¼€
     String MP4_SUFFIX_NAME = ".mp4";
-    // m3u8ÎÄ¼şÎ²×º
+    // m3u8æ–‡ä»¶å°¾ç¼€
     String M3U8_SUFFIX_NAME = ".m3u8";
-    // HTTP¡¢HTTPSĞ­ÒéÇ°×º
+    // HTTPã€HTTPSåè®®å‰ç¼€
     String HTTP_PROTOCOL_PREFIX = "http://";
     String HTTPS_PROTOCOL_PREFIX = "https://";
 
-    // Ê±¼ä¸ñÊ½»¯¸ñÊ½
+    // æ—¶é—´æ ¼å¼åŒ–æ ¼å¼
     String DATE_FORMAT_PATTERN = "MM/dd HH:mm:ss";
-    // Ê±¼ä¸ñÊ½ÎÄ¼şÃû¸ñÊ½»¯¸ñÊ½
+    // æ—¶é—´æ ¼å¼æ–‡ä»¶åæ ¼å¼åŒ–æ ¼å¼
     String FILE_NAME_DATE_FORMAT_PATTERN = "yyyyMMddHHmmss";
 
-    // User-Agent ÇëÇóÍ·
+    // User-Agent è¯·æ±‚å¤´
     String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/14.0.835.163 Safari/535.1";
 
 }

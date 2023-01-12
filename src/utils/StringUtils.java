@@ -7,9 +7,9 @@ import java.util.Date;
 
 public class StringUtils {
 
-    // Ê±¼ä¸ñÊ½»¯
+    // æ—¶é—´æ ¼å¼åŒ–
     private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(Constant.DATE_FORMAT_PATTERN);
-    // ÎÄ¼şÃû¸ñÊ½»¯
+    // æ–‡ä»¶åæ ¼å¼åŒ–
     private static final SimpleDateFormat fileNameFormat = new SimpleDateFormat(Constant.FILE_NAME_DATE_FORMAT_PATTERN);
 
     public static boolean isNotEmpty(String str){

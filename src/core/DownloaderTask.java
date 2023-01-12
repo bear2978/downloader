@@ -1,6 +1,7 @@
 package core;
 
 import common.Constant;
+import ui.HomeJFrame;
 import utils.FileUtils;
 import utils.HttpUtils;
 import utils.LogUtils;
@@ -10,7 +11,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * ·ÖÆ¬ÏÂÔØÈÎÎñ
+ * åˆ†ç‰‡ä¸‹è½½ä»»åŠ¡
  * @author zyj
  */
 public class DownloaderTask implements Callable<Boolean> {
@@ -29,7 +30,10 @@ public class DownloaderTask implements Callable<Boolean> {
 
     private CountDownLatch countDownLatch;
 
-    public DownloaderTask(String url, String path, long startPos, long endPos, int part, DownloadInfoThread downloadInfoThread, CountDownLatch countDownLatch) {
+    private int frequency;
+
+    public DownloaderTask(String url, String path, long startPos, long endPos, int part, DownloadInfoThread downloadInfoThread,
+                          CountDownLatch countDownLatch, int frequency) {
         this.url = url;
         this.path = path;
         this.startPos = startPos;
@@ -37,20 +41,21 @@ public class DownloaderTask implements Callable<Boolean> {
         this.part = part;
         this.downloadInfoThread = downloadInfoThread;
         this.countDownLatch = countDownLatch;
+        this.frequency = frequency;
     }
 
     @Override
     public Boolean call() throws Exception {
-
-        // ÅĞ¶Ï¸ÃÆ¬ÎÄ¼şÊÇ·ñÏÂÔØ
+        String msg = "";
+        // åˆ¤æ–­è¯¥ç‰‡æ–‡ä»¶æ˜¯å¦ä¸‹è½½
         File file = new File (this.path);
         if (file.exists() && FileUtils.getFileContentLength(this.path) >= endPos - startPos + 1){
-            LogUtils.info("ÎÄ¼şÆ¬ {} ÒÑ´æÔÚ", file.getPath());
+            LogUtils.info("æ–‡ä»¶ç‰‡ {} å·²å­˜åœ¨", file.getPath());
             countDownLatch.countDown();
             return true;
         }
 
-        // »ñÈ¡·Ö¿éÏÂÔØµÄÁ¬½Ó
+        // è·å–åˆ†å—ä¸‹è½½çš„è¿æ¥
         HttpURLConnection httpURLConnection = HttpUtils.getHttpURLConnection(url, startPos, endPos);
 
         try (
@@ -60,21 +65,34 @@ public class DownloaderTask implements Callable<Boolean> {
         ) {
             byte[] buffer = new byte[Constant.BYTE_SIZE];
             int len = -1;
-            // Ñ­»·¶ÁÈ¡Êı¾İ
+            // å¾ªç¯è¯»å–æ•°æ®
             while ((len = bis.read(buffer)) != -1) {
-                // 1ÃëÄÚÏÂÔØÊı¾İÖ®ºÍ, Í¨¹ıÔ­×ÓÀà½øĞĞ²Ù×÷
+                // 1ç§’å†…ä¸‹è½½æ•°æ®ä¹‹å’Œ, é€šè¿‡åŸå­ç±»è¿›è¡Œæ“ä½œ
                 downloadInfoThread.getDownSize().add(len);
                 accessFile.write(buffer,0, len);
             }
+            msg = String.format("ç¬¬ %s ä¸ªç‰‡æ®µã€%sã€‘ä¸‹è½½æˆåŠŸï¼", this.part + 1, file.getName());
+            LogUtils.info(msg);
+            HomeJFrame.appendMessage(msg);
+            countDownLatch.countDown();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            LogUtils.error("ÏÂÔØÎÄ¼ş²»´æÔÚ{}", url);
-            return false;
+            LogUtils.error("ä¸‹è½½æ–‡ä»¶ä¸å­˜åœ¨\n{}", url);
+            countDownLatch.countDown();
+            throw new FileNotFoundException();
         } catch (Exception e) {
-            LogUtils.error("{} ÏÂÔØÊ§°Ü£¡", file.getName());
-            new Thread (() -> {
-                new DownloaderTask(this.url, this.path, this.startPos, this.endPos, this.part, downloadInfoThread, countDownLatch);
-            }).start();
+            if (this.frequency < Constant.TRY_TIME) {
+                msg = String.format("ã€%sã€‘ä¸‹è½½å¤±è´¥ï¼å¼€å§‹ç¬¬%sæ¬¡é‡è¯•", file.getName(), this.frequency + 1);
+                LogUtils.error(msg);
+                HomeJFrame.appendMessage(msg);
+                new Thread (() -> {
+                    new DownloaderTask(this.url, this.path, this.startPos, this.endPos, this.part, downloadInfoThread,
+                            countDownLatch, this.frequency + 1);
+                }).start();
+            } else {
+                LogUtils.error("{} ä¸‹è½½å¤±è´¥ï¼", file.getName());
+                countDownLatch.countDown();
+            }
         } finally {
             httpURLConnection.disconnect();
         }
